@@ -5,12 +5,12 @@ var config = {
     projectId: "flame-on-7627d",
     storageBucket: "flame-on-7627d.appspot.com",
     messagingSenderId: "321288081814"
-  };
-  firebase.initializeApp(config);
+};
+firebase.initializeApp(config);
 
-  var database = firebase.database();
+var database = firebase.database();
 
-  database.ref().on("child_added", function(child){
+database.ref().on("child_added", function (child) {
     var tBody = $("tbody");
     var tRow = $("<tr>");
     var trainLineTd = $("<td>").text(child.val().trainLine);
@@ -25,26 +25,30 @@ var config = {
 
 });
 
-$("#submit-button").on("click", function(){
+$("#submit-button").on("click", function () {
     event.preventDefault();
     var trainLine = $("#trainLine").val().trim();
     var destination = $("#destination").val().trim();
     var firstTrainTime = $("#firstTrainTime").val().trim();
-    console.log("firstTrainTime", firstTrainTime);
     var frequency = $("#frequency").val().trim();
     var trainTime = moment(firstTrainTime, "HH:mm");
-    console.log("traintime", trainTime);
-    var numberOfMinutes = moment.duration(trainTime.diff(moment())*-1).as('minutes');
-    console.log("number of minutes", numberOfMinutes);        
-    var numberOfTrains = numberOfMinutes/frequency;
-    console.log("number of trains", numberOfTrains);
-    var lastTrainMinutes = moment(Math.floor(numberOfTrains)*frequency, 'm');
-    console.log("most recent train in minutes", lastTrainMinutes);
-    var lastTrainTime = lastTrainMinutes.add(trainTime);
-    console.log("lastTrainTime", lastTrainTime);
-    var nextArrival = 10;
-    var minutesAway = 10;
-    
+    var nextArrival = 0;
+    var minutesAway = 0;
+    var secondsAway = 0;
+
+    if (moment().isBefore(trainTime) == false) {
+        var numberOfMinutes = (moment().diff(trainTime, 'm')) * -1;
+        var numberOfTrains = (numberOfMinutes / frequency) * -1;
+        var minutesPassed = (Math.ceil(numberOfTrains) * frequency) * -1;
+        minutesAway = numberOfMinutes - minutesPassed;
+        var nextarrival = moment().add(minutesAway, 'm');
+        nextArrival = moment(nextarrival).format("LT");
+    } else {
+        nextArrival = moment(trainTime).format("LT");
+        secondsAway = (moment().diff(trainTime, 's'))*-1;
+        minutesAway = Math.ceil(secondsAway/60);
+    }
+
     var newEmp = {
         trainLine,
         destination,
@@ -55,4 +59,5 @@ $("#submit-button").on("click", function(){
     };
 
     database.ref().push(newEmp);
+    $("#train-form")[0].reset();
 });
